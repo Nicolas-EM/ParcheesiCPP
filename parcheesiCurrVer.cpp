@@ -180,12 +180,18 @@ bool isYes(string input){
 void movePiece(int turn, int diceRoll){
     for(int i = 0; i < numOfPieces; i++){
         if(Players[turn].piecePos[i] != -1 && !isBlocked(Players[turn].piecePos[i], diceRoll)){
-            cout << "You can move a piece from -" << Players[turn].piecePos[i] << "- to -" << (Players[turn].piecePos[i] + diceRoll)%68 << "-\n";
-            cout << "Would you like to move it? (Y/N): ";
-            cin >> input;
-            if(isYes(input)){
+            if(numOfPieces == 1){
                 Players[turn].piecePos[i] += diceRoll;
                 Players[turn].piecePos[i] %= 68;
+            }
+            else{
+                cout << "You can move a piece from -" << Players[turn].piecePos[i] << "- to -" << (Players[turn].piecePos[i] + diceRoll)%68 << "-\n";
+                cout << "Would you like to move it? (Y/N): ";
+                cin >> input;
+                if(isYes(input)){
+                    Players[turn].piecePos[i] += diceRoll;
+                    Players[turn].piecePos[i] %= 68;
+                }
             }
             for(int i = 0; i < numOfPieces; i++){
                 for(int j = 0; j < numOfPlayers; j++){
@@ -207,6 +213,14 @@ void movePiece(int turn, int diceRoll){
     }
 }
 
+bool winConditionMet(int turn){
+    for(int i = 0; i < numOfPieces; i++){
+        if(Players[turn].piecePos[i] < Players[turn].startPos && Players[turn].piecePos[i] >= Players[turn].endPos) continue;
+        else return false;
+    }
+    return true;
+}
+
 // Yellow Blue Red Green
 int main(){
     do{
@@ -222,7 +236,10 @@ int main(){
             if(Players[turn].numOfHomePieces() <= 3){
                 cout << " and must return home\n";
                 for(int i = 0; i < numOfPieces; i++){
-                    if(Players[turn].piecePos[i] != -1) Players[turn].piecePos[i] = -1;     // This just returns furthest piece home, posibly let player choose which piece to move?
+                    if(Players[turn].piecePos[i] != -1){
+                        Players[turn].piecePos[i] = -1;     // This just returns furthest piece home, posibly let player choose which piece to move?
+                        printBoard();
+                    }
                 }
             }
             else cout << "but had no pieces outside of home. Next persons turn!\n";
@@ -246,16 +263,29 @@ int main(){
                 else{
                     cout << "=================================================\n";
                     cout << "You rolled a 5 and can move a piece onto the BOARD\n";
-                    cout << "Would you like to move the piece out? (Y/N): ";
-                    cin >> input;
-                    if(isYes(input)) Players[turn].leaveHome();
-                    else movePiece(turn, diceRoll);
+                    if(numOfPieces == 1) Players[turn].leaveHome();
+                    else{
+                        cout << "Would you like to move the piece out? (Y/N): ";
+                        cin >> input;
+                        if(isYes(input)) Players[turn].leaveHome();
+                        else movePiece(turn, diceRoll);
+                    }
                 }
             }
             else movePiece(turn, diceRoll);
         }
         else movePiece(turn, diceRoll);
         
+        if(winConditionMet(turn)){
+            for(int i = 0; i < 136; i++) cout << "=";
+            cout << "\n";
+            cout << Players[turn].name << " wins!\n";
+            cout << "CONGRATULATIONS\n";
+            for(int i = 0; i < 136; i++) cout << "=";
+            cout << "\n";
+            endGame = true;
+        }
+
         //Ending Turn
         if(diceRoll != 6){
             turn = (++turn) % numOfPlayers;
