@@ -12,7 +12,7 @@ int numOfPlayers;
 bool endGame = false;   // Set true to end game
 int turn = 0;           // Turn counter, range 0 to 3
 int consecTurns = 0;    // Counts num of consecutive 
-int numOfPieces = 4;    // Number of pieces
+int numOfPieces = 1;    // Number of pieces
 string input;
 
 // Implemented:
@@ -191,8 +191,10 @@ void movePiece(int turn, int diceRoll){
                     else{
                         for(int x = 0; x < numOfPieces; x++){
                             if(Players[turn].piecePos[i] == Players[j].piecePos[x] && Players[turn].piecePos[i] != -1){
-                                cout << Players[turn].name << " eats " << Players[j].name << "\n";
                                 Players[j].piecePos[x] = -1;
+                                printBoard();
+                                cout << Players[turn].name << " eats " << Players[j].name << " and gets 10 extra moves!\n";
+                                movePiece(turn, 10);
                                 break;
                             }
                         }
