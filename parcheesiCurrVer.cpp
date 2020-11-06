@@ -18,7 +18,6 @@ string input;
 // Implemented:
 class player;
 bool validName(string name, int turn);
-string numToPlayer(int x);  // Returns player name
 void printBoard();  // Unfinished?
 bool isYes(string input);
 
@@ -44,7 +43,7 @@ class player{
         }while(!validName(input, turn));
         name = input;
         letter = name[0];
-        switch(letter){       // Simplificar
+        switch(letter){ 
             case 'Y':
                 startPos = 5;
                 endPos = 0;
@@ -76,21 +75,6 @@ class player{
         }
     }
 
-    bool movePiece(int diceRoll){        // Returns piece moved
-        string choice;
-        for(int i = 0; i < numOfPieces; i++){
-            if(piecePos[i] != -1 && !isBlocked(piecePos[i], diceRoll)){
-                cout << "Would you like to move the piece at " << piecePos[i] << "? (Y/N)\n";
-                cin >> choice;
-                if(isYes(choice)){
-                    piecePos[i] += diceRoll;
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
     int numOfHomePieces(){
         int homePieces = 0;
         for(int i = 0; i < numOfPieces; i++){
@@ -117,22 +101,6 @@ bool validName(string name, int turn){
         }
     }
     return 1;
-}
-
-string numToPlayer(int x){
-    switch(x){
-        case 0:
-            return "Yellow";
-        case 1:
-            return "Blue";
-        case 2:
-            return "Red";
-        case 3:
-            return "Green";
-        default:
-            cout << "Invalid player number\n";
-            return "-1";
-    }
 }
 
 void printBoard(){
@@ -176,7 +144,7 @@ void printBoard(){
         for(int j = 0; j < numOfPlayers; j++){
             for(int x = 0; x < numOfPieces; x++){
                 if(i == Players[j].piecePos[x]){
-                    cout << Players[j].numOfPiecesAtX(Players[j].piecePos[x]) << Players[j].letter;
+                    cout << Players[j].numOfPiecesAtX(Players[j].piecePos[x]) << Players[j].letter;     // Si es 1 ficha solo letra
                     printed = true;
                     break;
                 }
@@ -207,17 +175,46 @@ bool isYes(string input){
     else return false;
 }
 
+void movePiece(int turn, int diceRoll){
+    for(int i = 0; i < numOfPieces; i++){
+        if(Players[turn].piecePos[i] != -1 && !isBlocked(Players[turn].piecePos[i], diceRoll)){
+            cout << "You can move a piece from -" << Players[turn].piecePos[i] << "- to -" << (Players[turn].piecePos[i] + diceRoll)%68 << "-\n";
+            cout << "Would you like to move it? (Y/N): ";
+            cin >> input;
+            if(isYes(input)){
+                Players[turn].piecePos[i] += diceRoll;
+                Players[turn].piecePos[i] %= 68;
+            }
+            for(int i = 0; i < numOfPieces; i++){
+                for(int j = 0; j < numOfPlayers; j++){
+                    if(j == turn) continue;
+                    else{
+                        for(int x = 0; x < numOfPieces; x++){
+                            if(Players[turn].piecePos[i] == Players[j].piecePos[x] && Players[turn].piecePos[i] != -1){
+                                cout << Players[turn].name << " eats " << Players[j].name << "\n";
+                                Players[j].piecePos[x] = -1;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 // Yellow Blue Red Green
 int main(){
     do{
         cout << "How many players are playing? (1-4): ";
         cin >> numOfPlayers;
+        if(numOfPlayers < 1 || numOfPlayers > 4) cout << "Invalid number of players, try again!\n";
     }while(numOfPlayers < 1 || numOfPlayers > 4);
     for(int i = 0; i < numOfPlayers; i++) Players[i] = player(i);
     do{
         printBoard();
         if(consecTurns >= 3){
-            cout << numToPlayer(turn) << " rolled 3 consecutive 6's";
+            cout << Players[turn].name << " rolled 3 consecutive 6's";
             if(Players[turn].numOfHomePieces() <= 3){
                 cout << " and must return home\n";
                 for(int i = 0; i < numOfPieces; i++){
@@ -241,33 +238,19 @@ int main(){
         //Case: Has a piece home
         if(Players[turn].numOfHomePieces() != 0){
             if(diceRoll == 5 && !isBlocked(Players[turn].startPos,0)){
-                if(Players[turn].numOfHomePieces() == 4) Players[turn].leaveHome();
+                if(Players[turn].numOfHomePieces() == numOfPieces) Players[turn].leaveHome();
                 else{
                     cout << "=================================================\n";
                     cout << "You rolled a 5 and can move a piece onto the BOARD\n";
                     cout << "Would you like to move the piece out? (Y/N): ";
                     cin >> input;
-                    if(isYes(input)){
-                        Players[turn].leaveHome();
-                    }
-                    else goto movePieceOnBoard;     // Entiendo que goto no es buena practica por "spaghetti code" pero en este caso creo que es aceptable
+                    if(isYes(input)) Players[turn].leaveHome();
+                    else movePiece(turn, diceRoll);
                 }
             }
-            else{
-                movePieceOnBoard:
-                for(int i = 0; i < numOfPieces; i++){
-                    if(Players[turn].piecePos[i] != -1 && !isBlocked(Players[turn].piecePos[i], diceRoll)){
-                        cout << "You can move a piece from -" << Players[turn].piecePos[i] << "- to -" << Players[turn].piecePos[i] + diceRoll << "-\n";
-                        cout << "Would you like to move it? (Y/N): ";
-                        cin >> input;
-                        if(isYes(input)) Players[turn].piecePos[i] += diceRoll;
-                    }
-                }
-            }
+            else movePiece(turn, diceRoll);
         }
-
-
-
+        
         //Ending Turn
         if(diceRoll != 6){
             turn = (++turn) % numOfPlayers;
