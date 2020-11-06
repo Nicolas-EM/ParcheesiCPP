@@ -12,7 +12,7 @@ int numOfPlayers;
 bool endGame = false;   // Set true to end game
 int turn = 0;           // Turn counter, range 0 to 3
 int consecTurns = 0;    // Counts num of consecutive 
-int numOfPieces = 4;    // Number of pieces
+int numOfPieces = 1;    // Number of pieces
 string input;
 
 // Implemented:
@@ -73,22 +73,6 @@ class player{
                 break;
             }
         }
-    }
-
-    bool movePiece(int diceRoll){        // Returns piece moved
-        string choice;
-        for(int i = 0; i < numOfPieces; i++){
-            if(piecePos[i] != -1 && !isBlocked(piecePos[i], diceRoll)){
-                cout << "Would you like to move the piece at " << piecePos[i] << "? (Y/N)\n";
-                cin >> choice;
-                if(isYes(choice)){
-                    piecePos[i] += diceRoll;
-                    piecePos[i] %= 68;
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     int numOfHomePieces(){
@@ -191,6 +175,36 @@ bool isYes(string input){
     else return false;
 }
 
+void movePiece(int turn, int diceRoll){
+    for(int i = 0; i < numOfPieces; i++){
+        if(Players[turn].piecePos[i] != -1 && !isBlocked(Players[turn].piecePos[i], diceRoll)){
+            cout << "You can move a piece from -" << Players[turn].piecePos[i] << "- to -" << (Players[turn].piecePos[i] + diceRoll)%68 << "-\n";
+            cout << "Would you like to move it? (Y/N): ";
+            cin >> input;
+            if(isYes(input)){
+                Players[turn].piecePos[i] += diceRoll;
+                Players[turn].piecePos[i] %= 68;
+            }
+            for(int i = 0; i < numOfPieces; i++){
+                for(int j = 0; j < numOfPlayers; j++){
+                    if(j == turn) continue;
+                    else{
+                        for(int x = 0; x < numOfPieces; x++){
+                            if(Players[turn].piecePos[i] == Players[j].piecePos[x] && Players[turn].piecePos[i] != -1){
+                                Players[j].piecePos[x] = -1;
+                                printBoard();
+                                cout << Players[turn].name << " eats " << Players[j].name << " and gets 10 extra moves!\n";
+                                movePiece(turn, 10);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 // Yellow Blue Red Green
 int main(){
     do{
@@ -232,40 +246,11 @@ int main(){
                     cout << "You rolled a 5 and can move a piece onto the BOARD\n";
                     cout << "Would you like to move the piece out? (Y/N): ";
                     cin >> input;
-                    if(isYes(input)){
-                        Players[turn].leaveHome();
-                    }
-                    else goto movePieceOnBoard;     // Entiendo que goto no es buena practica por "spaghetti code" pero en este caso creo que es aceptable
+                    if(isYes(input)) Players[turn].leaveHome();
+                    else movePiece(turn, diceRoll);
                 }
             }
-            else{
-                movePieceOnBoard:
-                for(int i = 0; i < numOfPieces; i++){
-                    if(Players[turn].piecePos[i] != -1 && !isBlocked(Players[turn].piecePos[i], diceRoll)){
-                        cout << "You can move a piece from -" << Players[turn].piecePos[i] << "- to -" << (Players[turn].piecePos[i] + diceRoll)%68 << "-\n";
-                        cout << "Would you like to move it? (Y/N): ";
-                        cin >> input;
-                        if(isYes(input)){
-                            Players[turn].piecePos[i] += diceRoll;
-                            Players[turn].piecePos[i] %= 68;
-                        }
-                        for(int i = 0; i < numOfPieces; i++){
-                            for(int j = 0; j < numOfPlayers; j++){
-                                if(j == turn) continue;
-                                else{
-                                    for(int x = 0; x < numOfPieces; x++){
-                                        if(Players[turn].piecePos[i] == Players[j].piecePos[x] && Players[turn].piecePos[i] != -1){
-                                            cout << Players[turn].name << " eats " << Players[j].name << "\n";
-                                            Players[j].piecePos[x] = -1;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            else movePiece(turn, diceRoll);
         }
         
         //Ending Turn
