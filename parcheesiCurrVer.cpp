@@ -12,7 +12,7 @@ int numOfPlayers = 2;
 bool endGame = false;   // Set true to end game
 int turn = 0;           // Turn counter, range 0 to 3
 int consecTurns = 0;    // Counts num of consecutive 
-int numOfPieces = 1;    // Number of pieces
+int numOfPieces = 4;    // Number of pieces
 string input;
 
 // Implemented:
