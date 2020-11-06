@@ -8,7 +8,7 @@ Date: 5/11/20
 using namespace std;
 
 // Variables:
-int numOfPlayers;
+int numOfPlayers = 2;
 bool endGame = false;   // Set true to end game
 int turn = 0;           // Turn counter, range 0 to 3
 int consecTurns = 0;    // Counts num of consecutive 
@@ -127,8 +127,9 @@ void printBoard(){
     bool printed = false;
     for(int i = 0; i < 68; i++){
         for(int j = 0; j < numOfPlayers; j++){
-            if(i == Players[j].startPos){
-                cout << Players[j].numOfHomePieces() << Players[j].letter;
+            if(i == Players[j].startPos && Players[j].numOfHomePieces() != 0){
+                if(Players[j].numOfHomePieces() == 1) cout << " " << Players[j].letter;
+                else if(Players[j].numOfHomePieces() > 1) cout << Players[j].numOfHomePieces() << Players[j].letter;
                 printed = true;
             }
         }
@@ -144,7 +145,8 @@ void printBoard(){
         for(int j = 0; j < numOfPlayers; j++){
             for(int x = 0; x < numOfPieces; x++){
                 if(i == Players[j].piecePos[x]){
-                    cout << Players[j].numOfPiecesAtX(Players[j].piecePos[x]) << Players[j].letter;     // Si es 1 ficha solo letra
+                    if(Players[j].numOfPiecesAtX(Players[j].piecePos[x]) == 1) cout << " " << Players[j].letter;
+                    else if(Players[j].numOfPiecesAtX(Players[j].piecePos[x]) > 1) cout << Players[j].numOfPiecesAtX(Players[j].piecePos[x]) << Players[j].letter;
                     printed = true;
                     break;
                 }
@@ -252,6 +254,7 @@ int main(){
             }
             else movePiece(turn, diceRoll);
         }
+        else movePiece(turn, diceRoll);
         
         //Ending Turn
         if(diceRoll != 6){
