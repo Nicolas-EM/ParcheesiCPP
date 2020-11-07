@@ -1,6 +1,6 @@
 /*
 Author: Nicolas ESPINOSA MOOSER
-Date: 5/11/20
+Date created: 4/11/20
 */
 
 #include <iostream>
@@ -15,14 +15,16 @@ int consecTurns = 0;    // Counts num of consecutive
 int numOfPieces = 4;    // Number of pieces
 string input;
 
-// Implemented:
+// Functions Implemented:
 class player;
 bool validName(string name, int turn);
 void printBoard();  // Unfinished?
 bool isYes(string input);
+bool isSafe(int x);
 
 // To Implement:
 bool isBlocked(int x, int diceRoll);        // Returns true for blocked
+
 
 class player{
     public:
@@ -88,6 +90,14 @@ class player{
         for(int i = 0; i < numOfPieces; i++) if(piecePos[i] == x) numOfPiecesAtX++;
         return numOfPiecesAtX;
     }
+
+    int numOfBoardPieces(){
+        int output = 0;
+        for(int i = 0; i < numOfPieces; i++){
+            if(piecePos[i] != -1) output++;
+        }
+        return output;
+    }
 };
 
 player Players[4];
@@ -142,11 +152,15 @@ void printBoard(){
     for(int i = 0; i < 4; i++) cout << "oo--------XX------------oo--------";
     cout << "\n";
     for(int i = 0; i < 68; i++){
-        for(int j = 0; j < numOfPlayers; j++){
+        for(int player1 = 0; player1 < numOfPlayers; player1++){
             for(int x = 0; x < numOfPieces; x++){
-                if(i == Players[j].piecePos[x]){
-                    if(Players[j].numOfPiecesAtX(Players[j].piecePos[x]) == 1) cout << " " << Players[j].letter;
-                    else if(Players[j].numOfPiecesAtX(Players[j].piecePos[x]) > 1) cout << Players[j].numOfPiecesAtX(Players[j].piecePos[x]) << Players[j].letter;
+                if(i == Players[player1].piecePos[x]){
+                    // if(samePosDifPlayer(player1)){
+                    //     cout << Players[player1].letter << Players[samePosDifPlayer(player1) - 1].letter;
+                    //     i++;
+                    // }
+                    if(Players[player1].numOfPiecesAtX(Players[player1].piecePos[x]) == 1) cout << " " << Players[player1].letter;
+                    else if(Players[player1].numOfPiecesAtX(Players[player1].piecePos[x]) > 1) cout << Players[player1].numOfPiecesAtX(Players[player1].piecePos[x]) << Players[player1].letter;
                     printed = true;
                     break;
                 }
@@ -185,12 +199,18 @@ void movePiece(int turn, int diceRoll){
                 Players[turn].piecePos[i] %= 68;
             }
             else{
-                cout << "You can move a piece from -" << Players[turn].piecePos[i] << "- to -" << (Players[turn].piecePos[i] + diceRoll)%68 << "-\n";
-                cout << "Would you like to move it? (Y/N): ";
-                cin >> input;
-                if(isYes(input)){
+                if(Players[turn].numOfBoardPieces() == 1){
                     Players[turn].piecePos[i] += diceRoll;
                     Players[turn].piecePos[i] %= 68;
+                }
+                else{
+                    cout << "You can move a piece from -" << Players[turn].piecePos[i] << "- to -" << (Players[turn].piecePos[i] + diceRoll)%68 << "-\n";
+                    cout << "Would you like to move it? (Y/N): ";
+                    cin >> input;
+                    if(isYes(input)){
+                        Players[turn].piecePos[i] += diceRoll;
+                        Players[turn].piecePos[i] %= 68;
+                    }
                 }
             }
             for(int i = 0; i < numOfPieces; i++){
@@ -198,7 +218,7 @@ void movePiece(int turn, int diceRoll){
                     if(j == turn) continue;
                     else{
                         for(int x = 0; x < numOfPieces; x++){
-                            if(Players[turn].piecePos[i] == Players[j].piecePos[x] && Players[turn].piecePos[i] != -1){
+                            if(Players[turn].piecePos[i] == Players[j].piecePos[x] && Players[turn].piecePos[i] != -1 && !isSafe(Players[j].piecePos[x])){
                                 Players[j].piecePos[x] = -1;
                                 printBoard();
                                 cout << Players[turn].name << " eats " << Players[j].name << " and gets 10 extra moves!\n";
@@ -219,6 +239,11 @@ bool winConditionMet(int turn){
         else return false;
     }
     return true;
+}
+
+bool isSafe(int x){
+    if(x == 0 || x == 5 || x == 12 || x == 17 || x == 22 || x == 29 || x == 34 || x == 39 || x == 46 || x == 51 || x == 56 || x == 63 || x >= 69) return true;
+    else return false;
 }
 
 // Yellow Blue Red Green
