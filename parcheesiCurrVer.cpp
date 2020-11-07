@@ -5,6 +5,11 @@ Date created: 4/11/20
 
 #include <iostream>
 #include <time.h>
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <unistd.h>
+#endif
 using namespace std;
 
 // Variables:
@@ -24,7 +29,6 @@ bool isSafe(int x);
 
 // To Implement:
 bool isBlocked(int x, int diceRoll);        // Returns true for blocked
-
 
 class player{
     public:
@@ -175,7 +179,7 @@ void printBoard(){
 }
 
 bool isBlocked(int x, int diceRoll){        // Returns true if any case between x and x+diceRoll are blocked
-    while(diceRoll >= 0){
+    while(diceRoll > 0){
         for(int i = 0; i < numOfPlayers; i++){
             for(int j = 0; j < numOfPieces; j++){
                 if((x + diceRoll) == Players[i].piecePos[j] && Players[i].piecePos[j] == Players[i].piecePos[j+1]) return true;
@@ -194,6 +198,7 @@ bool isYes(string input){
 void movePiece(int turn, int diceRoll){
     for(int i = 0; i < numOfPieces; i++){
         if(Players[turn].piecePos[i] != -1 && !isBlocked(Players[turn].piecePos[i], diceRoll)){
+            cout << "MADE IT IN\n";
             if(numOfPieces == 1){
                 Players[turn].piecePos[i] += diceRoll;
                 Players[turn].piecePos[i] %= 68;
@@ -202,6 +207,7 @@ void movePiece(int turn, int diceRoll){
                 if(Players[turn].numOfBoardPieces() == 1){
                     Players[turn].piecePos[i] += diceRoll;
                     Players[turn].piecePos[i] %= 68;
+                    return;
                 }
                 else{
                     cout << "You can move a piece from -" << Players[turn].piecePos[i] << "- to -" << (Players[turn].piecePos[i] + diceRoll)%68 << "-\n";
@@ -210,6 +216,7 @@ void movePiece(int turn, int diceRoll){
                     if(isYes(input)){
                         Players[turn].piecePos[i] += diceRoll;
                         Players[turn].piecePos[i] %= 68;
+                        return;
                     }
                 }
             }
@@ -223,7 +230,7 @@ void movePiece(int turn, int diceRoll){
                                 printBoard();
                                 cout << Players[turn].name << " eats " << Players[j].name << " and gets 10 extra moves!\n";
                                 movePiece(turn, 10);
-                                break;
+                                return;
                             }
                         }
                     }
@@ -231,6 +238,9 @@ void movePiece(int turn, int diceRoll){
             }
         }
     }
+    for(int i = 0; i < 136; i++) cout << "=";
+    cout << "\n\t\t\t\t\t" <<  Players[turn].name << " couldn't move any pieces!\n";
+    sleep(1);
 }
 
 bool winConditionMet(int turn){
@@ -254,8 +264,8 @@ int main(){
         if(numOfPlayers < 1 || numOfPlayers > 4) cout << "Invalid number of players, try again!\n";
     }while(numOfPlayers < 1 || numOfPlayers > 4);
     for(int i = 0; i < numOfPlayers; i++) Players[i] = player(i);
+    printBoard();
     do{
-        printBoard();
         if(consecTurns >= 3){
             cout << Players[turn].name << " rolled 3 consecutive 6's";
             if(Players[turn].numOfHomePieces() <= 3){
@@ -286,7 +296,6 @@ int main(){
             if(diceRoll == 5 && !isBlocked(Players[turn].startPos,0)){
                 if(Players[turn].numOfHomePieces() == numOfPieces) Players[turn].leaveHome();
                 else{
-                    cout << "=================================================\n";
                     cout << "You rolled a 5 and can move a piece onto the BOARD\n";
                     if(numOfPieces == 1) Players[turn].leaveHome();
                     else{
@@ -317,6 +326,7 @@ int main(){
             consecTurns = 0;
         }
         else consecTurns++;
+        printBoard();
     }while(!endGame);
     return 0;
 }
