@@ -179,6 +179,11 @@ void printBoard(){
 }
 
 bool isBlocked(int x, int diceRoll){        // Returns true if any case between x and x+diceRoll are blocked
+    if(diceRoll == 0){
+        int piecesAtX = 0;
+        for(int player = 0; player < numOfPlayers; player++) piecesAtX += Players[player].numOfPiecesAtX(x);
+        if(piecesAtX >= 2) return true;
+    }
     while(diceRoll > 0){
         for(int i = 0; i < numOfPlayers; i++){
             for(int j = 0; j < numOfPieces; j++){
@@ -198,7 +203,6 @@ bool isYes(string input){
 void movePiece(int turn, int diceRoll){
     for(int i = 0; i < numOfPieces; i++){
         if(Players[turn].piecePos[i] != -1 && !isBlocked(Players[turn].piecePos[i], diceRoll)){
-            cout << "MADE IT IN\n";
             if(numOfPieces == 1){
                 Players[turn].piecePos[i] += diceRoll;
                 Players[turn].piecePos[i] %= 68;
