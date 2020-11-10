@@ -176,7 +176,7 @@ void printBoard(){
             for(int x = 0; x < numOfPieces; x++){
                 if(i == Players[player1].piecePos[x]){
                     if(otherPlayerSamePos(player1, i)){
-                        cout << Players[player1].letter << Players[otherPlayerSamePos(player1, i) - 1].letter;
+                        cout << Players[player1].letter << Players[otherPlayerSamePos(player1, i) - 1].letter << "  ";
                         i++;
                     }
                     else if(Players[player1].numOfPiecesAtX(Players[player1].piecePos[x]) == 1) cout << " " << Players[player1].letter;
@@ -195,20 +195,24 @@ void printBoard(){
     cout << "FINAL STRETCH:\n";
     for(int i = 0; i < 8; i++) cout << 68 + i << " ";
     cout << "\n";
-    for(int turn = 0; turn < numOfPlayers; turn++){
-        for(int i = 0; i < numOfPieces; i++){
-            for(int x = 68; x < 77; x++){
+    for(int x = 68; x < 77; x++){
+        for(int turn = 0; turn < numOfPlayers; turn++){
+            for(int i = 0; i < numOfPieces; i++){
                 if(x == Players[turn].piecePos[i]){
-                    cout << " " << Players[turn].letter << " ";
-                    printed = true;
+                    if(otherPlayerSamePos(turn, x)){
+                        cout << Players[turn].letter << Players[otherPlayerSamePos(turn, x) - 1].letter;
+                        x++;
+                        printed = true;
+                    }
+                    else{
+                        cout << " " << Players[turn].letter << " ";
+                        printed = true;
+                    }
                 }
-                else cout << "   ";
             }
         }
-        if(printed){
-            cout << "\n";
-            printed = false;
-        }
+        if(!printed) cout << "   ";
+        else printed = false;
     }
 
     cout << "\n";
