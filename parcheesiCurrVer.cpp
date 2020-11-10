@@ -22,13 +22,15 @@ string input;
 
 // Functions Implemented:
 class player;
-bool validName(string name, int turn);
-void printBoard();  // Unfinished?
-bool isYes(string input);
-bool isSafe(int x);
-bool isBlocked(int x, int diceRoll);        // Returns true for blocked
+int otherPlayerSamePos(int player, int piecePos);       // Returns player number + 1 of player with same position
+bool validName(string name, int turn);                  // Return true if name is valid colour   
+bool isBlocked(int x, int diceRoll);                    // Returns true if any case between x and x+diceRoll are blocked
+bool isYes(string input);                               // Returns true for all versions of yes/Yes/Y/y
+bool winConditionMet(int turn);                         // Checks to see if player won
+bool isSafe(int x);                                     // Returns true if X is a safe spot
+void movePiece(int turn, int diceRoll);                 // Moves piece
+void printBoard();                                      // Prints HOME board, BOARD board and FINAL STRETCH
 
-// To Implement:
 
 class player{
     public:
@@ -110,18 +112,7 @@ class player{
 
 player Players[4];
 
-bool validName(string name, int turn){
-    if(name != "Yellow" && name != "Blue" && name != "Red" && name != "Green") return 0;
-    else{
-        for(int i = 0; i < numOfPlayers; i++){
-            if(turn == i) continue;
-            else if(Players[i].name == name) return 0;
-        }
-    }
-    return 1;
-}
-
-int otherPlayerSamePos(int player, int piecePos){       // Returns player number + 1 of player with same position
+int otherPlayerSamePos(int player, int piecePos){
     // cout << "OTHER\n";
     for(int i = 0; i < numOfPlayers; i++){
         if(i == player) continue;
@@ -133,94 +124,18 @@ int otherPlayerSamePos(int player, int piecePos){       // Returns player number
     return 0;
 }
 
-void printBoard(){
-    for(int i = 0; i < 136; i++) cout << "=";
-    cout << "\n";
-    for(int i = 0; i < 7; i++){
-        for(int j = 0; j < 10; j++){
-            if(i == 6 && j > 7) continue;
-            cout << i << "-";
-        }
-    }  
-    cout << "\n";
-    for(int i = 0; i < 7; i++){
-        for(int j = 0; j < 10; j++){
-            if(i == 6 && j > 7) continue;
-            cout << j << "-";
+bool validName(string name, int turn){                  
+    if(name != "Yellow" && name != "Blue" && name != "Red" && name != "Green") return 0;
+    else{
+        for(int i = 0; i < numOfPlayers; i++){
+            if(turn == i) continue;
+            else if(Players[i].name == name) return 0;
         }
     }
-    cout << "\n";
-
-    // Tablero HOME
-    for(int i = 0; i < 4; i++) cout << "oo--------XX------------oo--------";
-    cout << "\n";
-    bool printed = false;
-    for(int i = 0; i < 68; i++){
-        for(int j = 0; j < numOfPlayers; j++){
-            if(i == Players[j].startPos && Players[j].numOfHomePieces() != 0){
-                if(Players[j].numOfHomePieces() == 1) cout << " " << Players[j].letter;
-                else if(Players[j].numOfHomePieces() > 1) cout << Players[j].numOfHomePieces() << Players[j].letter;
-                printed = true;
-            }
-        }
-        if(!printed) cout << "  ";
-        else printed = false;
-    }
-    cout << "  HOME\n";
-
-    // Tablero Abajo
-    for(int i = 0; i < 4; i++) cout << "oo--------XX------------oo--------";
-    cout << "\n";
-    for(int i = 0; i < 68; i++){
-        for(int player1 = 0; player1 < numOfPlayers; player1++){
-            for(int x = 0; x < numOfPieces; x++){
-                if(i == Players[player1].piecePos[x]){
-                    if(otherPlayerSamePos(player1, i)){
-                        cout << Players[player1].letter << Players[otherPlayerSamePos(player1, i) - 1].letter << "  ";
-                        i++;
-                    }
-                    else if(Players[player1].numOfPiecesAtX(Players[player1].piecePos[x]) == 1) cout << " " << Players[player1].letter;
-                    else if(Players[player1].numOfPiecesAtX(Players[player1].piecePos[x]) > 1) cout << Players[player1].numOfPiecesAtX(Players[player1].piecePos[x]) << Players[player1].letter;
-                    printed = true;
-                    break;
-                }
-            }
-        }
-        if(!printed) cout << "  ";
-        else printed = false;
-    }
-    cout << "  BOARD\n";
-
-    // Tablero Casillas Final (Para 1 ficha jaja)
-    cout << "FINAL STRETCH:\n";
-    for(int i = 0; i < 8; i++) cout << 68 + i << " ";
-    cout << "\n";
-    for(int x = 68; x < 77; x++){
-        for(int turn = 0; turn < numOfPlayers; turn++){
-            for(int i = 0; i < numOfPieces; i++){
-                if(x == Players[turn].piecePos[i]){
-                    if(otherPlayerSamePos(turn, x)){
-                        cout << Players[turn].letter << Players[otherPlayerSamePos(turn, x) - 1].letter;
-                        x++;
-                        printed = true;
-                    }
-                    else{
-                        cout << " " << Players[turn].letter << " ";
-                        printed = true;
-                    }
-                }
-            }
-        }
-        if(!printed) cout << "   ";
-        else printed = false;
-    }
-
-    cout << "\n";
-    for(int i = 0; i < 136; i++) cout << "=";
-    cout << "\n";
+    return 1;
 }
 
-bool isBlocked(int x, int diceRoll){        // Returns true if any case between x and x+diceRoll are blocked
+bool isBlocked(int x, int diceRoll){                    
     if(x >= 68) return false;
     if(diceRoll == 0){
         int piecesAtX = 0;
@@ -238,14 +153,26 @@ bool isBlocked(int x, int diceRoll){        // Returns true if any case between 
     return false;
 }
 
-bool isYes(string input){
-    if(input == "Yes" || input == "YES" || input == "y" || input == "Y") return true;
+bool isYes(string input){                               
+    if(input == "Yes" || input == "YES" || input == "y" || input == "Y" || input == "1") return true;
     else return false;
 }
 
-void movePiece(int turn, int diceRoll){
+bool winConditionMet(int turn){                         
     for(int i = 0; i < numOfPieces; i++){
-        // cout << "\t\t" << Players[turn].piecePos[i] << "\n";
+        if(Players[turn].pieceAtEnd[i]) continue;
+        else return false;
+    }
+    return true;
+}
+
+bool isSafe(int x){                                     
+    if(x == 0 || x == 5 || x == 12 || x == 17 || x == 22 || x == 29 || x == 34 || x == 39 || x == 46 || x == 51 || x == 56 || x == 63 || x >= 69) return true;
+    else return false;
+}
+
+void movePiece(int turn, int diceRoll){                 
+    for(int i = 0; i < numOfPieces; i++){
         if(Players[turn].piecePos[i] >= 68 && Players[turn].piecePos[i] < 75){        // Moving pieces in final stretch
             if(Players[turn].piecePos[i] + diceRoll == 75){
                 Players[turn].pieceAtEnd[i] = 1;
@@ -340,17 +267,91 @@ void movePiece(int turn, int diceRoll){
     sleep(1);
 }
 
-bool winConditionMet(int turn){
-    for(int i = 0; i < numOfPieces; i++){
-        if(Players[turn].pieceAtEnd[i]) continue;
-        else return false;
+void printBoard(){                                      
+    for(int i = 0; i < 136; i++) cout << "=";
+    cout << "\n";
+    for(int i = 0; i < 7; i++){
+        for(int j = 0; j < 10; j++){
+            if(i == 6 && j > 7) continue;
+            cout << i << "-";
+        }
+    }  
+    cout << "\n";
+    for(int i = 0; i < 7; i++){
+        for(int j = 0; j < 10; j++){
+            if(i == 6 && j > 7) continue;
+            cout << j << "-";
+        }
     }
-    return true;
-}
+    cout << "\n";
 
-bool isSafe(int x){
-    if(x == 0 || x == 5 || x == 12 || x == 17 || x == 22 || x == 29 || x == 34 || x == 39 || x == 46 || x == 51 || x == 56 || x == 63 || x >= 69) return true;
-    else return false;
+    // Tablero HOME
+    for(int i = 0; i < 4; i++) cout << "oo--------XX------------oo--------";
+    cout << "\n";
+    bool printed = false;
+    for(int i = 0; i < 68; i++){
+        for(int j = 0; j < numOfPlayers; j++){
+            if(i == Players[j].startPos && Players[j].numOfHomePieces() != 0){
+                if(Players[j].numOfHomePieces() == 1) cout << " " << Players[j].letter;
+                else if(Players[j].numOfHomePieces() > 1) cout << Players[j].numOfHomePieces() << Players[j].letter;
+                printed = true;
+            }
+        }
+        if(!printed) cout << "  ";
+        else printed = false;
+    }
+    cout << "  HOME\n";
+
+    // Tablero Abajo
+    for(int i = 0; i < 4; i++) cout << "oo--------XX------------oo--------";
+    cout << "\n";
+    for(int i = 0; i < 68; i++){
+        for(int player1 = 0; player1 < numOfPlayers; player1++){
+            for(int x = 0; x < numOfPieces; x++){
+                if(i == Players[player1].piecePos[x]){
+                    if(otherPlayerSamePos(player1, i)){
+                        cout << Players[player1].letter << Players[otherPlayerSamePos(player1, i) - 1].letter << "  ";
+                        i++;
+                    }
+                    else if(Players[player1].numOfPiecesAtX(Players[player1].piecePos[x]) == 1) cout << " " << Players[player1].letter;
+                    else if(Players[player1].numOfPiecesAtX(Players[player1].piecePos[x]) > 1) cout << Players[player1].numOfPiecesAtX(Players[player1].piecePos[x]) << Players[player1].letter;
+                    printed = true;
+                    break;
+                }
+            }
+        }
+        if(!printed) cout << "  ";
+        else printed = false;
+    }
+    cout << "  BOARD\n";
+
+    // Tablero Casillas Final (Para 1 ficha jaja)
+    cout << "FINAL STRETCH:\n";
+    for(int i = 0; i < 8; i++) cout << 68 + i << " ";
+    cout << "\n";
+    for(int x = 68; x < 77; x++){
+        for(int turn = 0; turn < numOfPlayers; turn++){
+            for(int i = 0; i < numOfPieces; i++){
+                if(x == Players[turn].piecePos[i]){
+                    if(otherPlayerSamePos(turn, x)){
+                        cout << Players[turn].letter << Players[otherPlayerSamePos(turn, x) - 1].letter;
+                        x++;
+                        printed = true;
+                    }
+                    else{
+                        cout << " " << Players[turn].letter << " ";
+                        printed = true;
+                    }
+                }
+            }
+        }
+        if(!printed) cout << "   ";
+        else printed = false;
+    }
+
+    cout << "\n";
+    for(int i = 0; i < 136; i++) cout << "=";
+    cout << "\n";
 }
 
 int main(){
