@@ -31,7 +31,6 @@ bool isSafe(int x);                                     // Returns true if X is 
 void movePiece(int turn, int diceRoll);                 // Moves piece
 void printBoard();                                      // Prints HOME board, BOARD board and FINAL STRETCH
 
-
 class player{
     public:
     int piecePos[numOfPieces];
@@ -354,6 +353,7 @@ void printBoard(){
     cout << "\n";
 }
 
+// GAME
 int main(){
     do{
         cout << "How many players are playing? (1-4): ";
@@ -362,8 +362,9 @@ int main(){
     }while(numOfPlayers < 1 || numOfPlayers > 4);
     for(int i = 0; i < numOfPlayers; i++) Players[i] = player(i);
     printBoard();
+
     do{
-        if(consecTurns >= 3){
+        if(consecTurns >= 3){                               // Check number of consecutive turns
             cout << Players[turn].name << " rolled 3 consecutive 6's";
             if(Players[turn].numOfHomePieces() <= 3){
                 cout << " and must return home\n";
@@ -388,25 +389,23 @@ int main(){
             if(diceRoll <= 0 || diceRoll > 6) cout << "Invalid dice roll! Valid inputs 1-6.\nTry Again!\n";
         }while(diceRoll <= 0 || diceRoll > 6);
 
-        if(Players[turn].numOfHomePieces() != 0){
-            if(diceRoll == 5 && !isBlocked(Players[turn].startPos,0)){
-                if(Players[turn].numOfHomePieces() == numOfPieces) Players[turn].leaveHome();
+        if(diceRoll == 5 && Players[turn].numOfHomePieces() != 0 && !isBlocked(Players[turn].startPos,0)){
+            if(Players[turn].numOfHomePieces() == numOfPieces) Players[turn].leaveHome();
+            else{
+                cout << "You rolled a 5 and can move a piece onto the BOARD\n";
+                if(numOfPieces == 1) Players[turn].leaveHome();
                 else{
-                    cout << "You rolled a 5 and can move a piece onto the BOARD\n";
-                    if(numOfPieces == 1) Players[turn].leaveHome();
-                    else{
-                        cout << "Would you like to move the piece out? (Y/N): ";
-                        cin >> input;
-                        if(isYes(input)) Players[turn].leaveHome();
-                        else movePiece(turn, diceRoll);
-                    }
+                    cout << "Would you like to move the piece out? (Y/N): ";
+                    cin >> input;
+                    if(isYes(input)) Players[turn].leaveHome();
+                    else movePiece(turn, diceRoll);
                 }
             }
-            else movePiece(turn, diceRoll);
         }
         else movePiece(turn, diceRoll);
 
-        if(winConditionMet(turn)){                          //End game
+        // Check for win
+        if(winConditionMet(turn)){
             for(int i = 0; i < 136; i++) cout << "=";
             cout << "\n\t\t\t\t\t" << Players[turn].name << " wins!\n";
             cout << "\t\t\t\t      CONGRATULATIONS\n";
