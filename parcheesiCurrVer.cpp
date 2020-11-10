@@ -181,7 +181,7 @@ void printBoard(){
 
     // Tablero Casillas Final (Para 1 ficha jaja)
     cout << "FINAL STRETCH:\n";
-    for(int i = 0; i < 9; i++) cout << 68 + i << " ";
+    for(int i = 0; i < 8; i++) cout << 68 + i << " ";
     cout << "\n";
     for(int turn = 0; turn < numOfPlayers; turn++){
         for(int i = 0; i < numOfPieces; i++){
@@ -223,36 +223,69 @@ bool isYes(string input){
 
 void movePiece(int turn, int diceRoll){
     for(int i = 0; i < numOfPieces; i++){
-        if(Players[turn].piecePos[i] >= 68){        // Moving pieces in final stretch
-            if(Players[turn].piecePos[i] + diceRoll == 76) Players[turn].pieceAtEnd[i] = 1;
-            else if(Players[turn].piecePos[i] + diceRoll > 76){
-                cout << "You can move a piece from -" << Players[turn].piecePos[i] << "- to -" << Players[turn].piecePos[i] - diceRoll - 2*(76 - Players[turn].piecePos[i]) << "-\n";
-                cout << "Would you like to move it? (Y/N): ";
-                cin >> input;
-                if(isYes(input)){
-                    Players[turn].piecePos[i] += diceRoll;
-                    Players[turn].piecePos[i] -= (diceRoll - 2*(76 - Players[turn].piecePos[i]));           // FIX ME
+        // cout << "\t\t" << Players[turn].piecePos[i] << "\n";
+        if(Players[turn].piecePos[i] >= 68 && Players[turn].piecePos[i] < 75){        // Moving pieces in final stretch
+            if(Players[turn].piecePos[i] + diceRoll == 75){
+                Players[turn].pieceAtEnd[i] = 1;
+                Players[turn].piecePos[i] += diceRoll;
+                if(numOfPieces != 1){
+                    cout << Players[turn].name << "reached the end and gets 10 extra moves!\n";
+                    movePiece(turn, 10);
+                }
+                return;
+            }
+            else if(Players[turn].piecePos[i] + diceRoll > 75){
+                if(numOfPieces == 1){
+                    Players[turn].piecePos[i] -= (diceRoll - 2*(75 - Players[turn].piecePos[i]));
                     return;
+                }
+                else{
+                    cout << "You can move a piece from -" << Players[turn].piecePos[i] << "- to -" << Players[turn].piecePos[i] - diceRoll + 2*(75 - Players[turn].piecePos[i]) << "-\n";
+                    cout << "Would you like to move it? (Y/N): ";
+                    cin >> input;
+                    if(isYes(input)){
+                        Players[turn].piecePos[i] -= (diceRoll - 2*(75 - Players[turn].piecePos[i]));
+                        return;
+                    }
                 }
             }
             else{
-                cout << "You can move a piece from -" << Players[turn].piecePos[i] << "- to -" << Players[turn].piecePos[i] + diceRoll << "-\n";
-                cout << "Would you like to move it? (Y/N): ";
-                cin >> input;
-                if(isYes(input)){
+                if(numOfPieces == 1){
                     Players[turn].piecePos[i] += diceRoll;
                     return;
+                }
+                else{
+                    cout << "You can move a piece from -" << Players[turn].piecePos[i] << "- to -" << Players[turn].piecePos[i] + diceRoll << "-\n";
+                    cout << "Would you like to move it? (Y/N): ";
+                    cin >> input;
+                    if(isYes(input)){
+                        Players[turn].piecePos[i] += diceRoll;
+                        return;
+                    }
                 }
             }
         }
         else if(Players[turn].piecePos[i] != -1 && !isBlocked(Players[turn].piecePos[i], diceRoll)){         // Move BOARD PIECES
             if(Players[turn].numOfBoardPieces() == 1){
-                if((Players[turn].endPos - Players[turn].piecePos[i] + 68) % 68 <= diceRoll){           // To move to final stretch
-                    Players[turn].piecePos[i] += diceRoll;
+                if((Players[turn].endPos - Players[turn].piecePos[i] + 68) % 68 < diceRoll){           // To move to final stretch
+                    Players[turn].piecePos[i] = 67 - ((Players[turn].endPos - Players[turn].piecePos[i] + 68) % 68) + diceRoll;
                     return;
                 }
                 Players[turn].piecePos[i] += diceRoll;
                 Players[turn].piecePos[i] %= 68;
+                for(int j = 0; j < numOfPlayers; j++){      // Check if eats peace
+                    if(j == turn) continue;
+                    else{
+                        for(int x = 0; x < numOfPieces; x++){
+                            if(Players[turn].piecePos[i] == Players[j].piecePos[x] && Players[turn].piecePos[i] != -1 && !isSafe(Players[j].piecePos[x])){                                Players[j].piecePos[x] = -1;
+                                printBoard();
+                                cout << Players[turn].name << " eats " << Players[j].name << " and gets 20 extra moves!\n";
+                                movePiece(turn, 20);
+                                return;
+                            }
+                        }
+                    }
+                }
                 return;
             }
             else{
@@ -262,26 +295,23 @@ void movePiece(int turn, int diceRoll){
                 if(isYes(input)){
                     Players[turn].piecePos[i] += diceRoll;
                     Players[turn].piecePos[i] %= 68;
-                    return;
-                }
-            }
-        }
-        for(int i = 0; i < numOfPieces; i++){                                                   // EATING PIECES
-                for(int j = 0; j < numOfPlayers; j++){
-                    if(j == turn) continue;
-                    else{
-                        for(int x = 0; x < numOfPieces; x++){
-                            if(Players[turn].piecePos[i] == Players[j].piecePos[x] && Players[turn].piecePos[i] != -1 && !isSafe(Players[j].piecePos[x])){
-                                Players[j].piecePos[x] = -1;
-                                printBoard();
-                                cout << Players[turn].name << " eats " << Players[j].name << " and gets 10 extra moves!\n";
-                                movePiece(turn, 10);
-                                return;
-                            }
+                    for(int j = 0; j < numOfPlayers; j++){      // Check if eats peace
+                        if(j == turn) continue;
+                        else{
+                            for(int x = 0; x < numOfPieces; x++){
+                                if(Players[turn].piecePos[i] == Players[j].piecePos[x] && Players[turn].piecePos[i] != -1 && !isSafe(Players[j].piecePos[x])){                                Players[j].piecePos[x] = -1;
+                                    printBoard();
+                                    cout << Players[turn].name << " eats " << Players[j].name << " and gets 20 extra moves!\n";
+                                    movePiece(turn, 20);
+                                    return;
+                                }
+                            }   
                         }
                     }
                 }
+                return;
             }
+        }
     }
     for(int i = 0; i < 136; i++) cout << "=";
     cout << "\n\t\t\t\t\t" <<  Players[turn].name << " couldn't move any pieces!\n";
@@ -290,7 +320,7 @@ void movePiece(int turn, int diceRoll){
 
 bool winConditionMet(int turn){
     for(int i = 0; i < numOfPieces; i++){
-        if(Players[turn].piecePos[i] < Players[turn].startPos && Players[turn].piecePos[i] >= Players[turn].endPos) continue;
+        if(Players[turn].pieceAtEnd[i]) continue;
         else return false;
     }
     return true;
@@ -352,13 +382,11 @@ int main(){
             else movePiece(turn, diceRoll);
         }
         else movePiece(turn, diceRoll);
-        
-        if(winConditionMet(turn)){
-            endGame:
+
+        if(winConditionMet(turn)){                          //End game
             for(int i = 0; i < 136; i++) cout << "=";
-            cout << "\n";
-            cout << Players[turn].name << " wins!\n";
-            cout << "CONGRATULATIONS\n";
+            cout << "\n\t\t\t\t\t" << Players[turn].name << " wins!\n";
+            cout << "\t\t\t\t      CONGRATULATIONS\n";
             for(int i = 0; i < 136; i++) cout << "=";
             cout << "\n";
             endGame = true;
@@ -370,7 +398,7 @@ int main(){
             consecTurns = 0;
         }
         else consecTurns++;
-        printBoard();
+        if(!endGame) printBoard();
     }while(!endGame);
     return 0;
 }
