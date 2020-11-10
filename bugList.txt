@@ -1,4 +1,5 @@
 Must Fix:
-    printBoard() fails if 2 pieces are in same position
+    
 
 Fixed
+    printBoard() fails if 2 pieces are in same position

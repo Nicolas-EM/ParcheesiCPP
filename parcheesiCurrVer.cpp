@@ -26,9 +26,9 @@ bool validName(string name, int turn);
 void printBoard();  // Unfinished?
 bool isYes(string input);
 bool isSafe(int x);
+bool isBlocked(int x, int diceRoll);        // Returns true for blocked
 
 // To Implement:
-bool isBlocked(int x, int diceRoll);        // Returns true for blocked
 
 class player{
     public:
@@ -121,6 +121,18 @@ bool validName(string name, int turn){
     return 1;
 }
 
+int otherPlayerSamePos(int player, int piecePos){       // Returns player number + 1 of player with same position
+    // cout << "OTHER\n";
+    for(int i = 0; i < numOfPlayers; i++){
+        if(i == player) continue;
+        for(int j = 0; j < numOfPieces; j++){
+            // cout << "Piece = " << piecePos << ", other = " << Players[i].piecePos[j] << "\n";
+            if(piecePos == Players[i].piecePos[j]) return i + 1;
+        }
+    }
+    return 0;
+}
+
 void printBoard(){
     for(int i = 0; i < 136; i++) cout << "=";
     cout << "\n";
@@ -163,11 +175,11 @@ void printBoard(){
         for(int player1 = 0; player1 < numOfPlayers; player1++){
             for(int x = 0; x < numOfPieces; x++){
                 if(i == Players[player1].piecePos[x]){
-                    // if(samePosDifPlayer(player1)){
-                    //     cout << Players[player1].letter << Players[samePosDifPlayer(player1) - 1].letter;
-                    //     i++;
-                    // }
-                    if(Players[player1].numOfPiecesAtX(Players[player1].piecePos[x]) == 1) cout << " " << Players[player1].letter;
+                    if(otherPlayerSamePos(player1, i)){
+                        cout << Players[player1].letter << Players[otherPlayerSamePos(player1, i) - 1].letter;
+                        i++;
+                    }
+                    else if(Players[player1].numOfPiecesAtX(Players[player1].piecePos[x]) == 1) cout << " " << Players[player1].letter;
                     else if(Players[player1].numOfPiecesAtX(Players[player1].piecePos[x]) > 1) cout << Players[player1].numOfPiecesAtX(Players[player1].piecePos[x]) << Players[player1].letter;
                     printed = true;
                     break;
@@ -186,11 +198,17 @@ void printBoard(){
     for(int turn = 0; turn < numOfPlayers; turn++){
         for(int i = 0; i < numOfPieces; i++){
             for(int x = 68; x < 77; x++){
-                if(x == Players[turn].piecePos[i]) cout << " " << Players[turn].letter << " ";
+                if(x == Players[turn].piecePos[i]){
+                    cout << " " << Players[turn].letter << " ";
+                    printed = true;
+                }
                 else cout << "   ";
             }
         }
-        cout << "\n";
+        if(printed){
+            cout << "\n";
+            printed = false;
+        }
     }
 
     cout << "\n";
