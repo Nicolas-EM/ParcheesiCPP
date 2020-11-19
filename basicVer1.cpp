@@ -7,13 +7,9 @@ Date created: 4/11/20
 #include <time.h>
 using namespace std;
 
-// Variables:
+// Global Variables:
 const int numOfPlayers = 2;     // Number of Players
 const int numOfPieces = 1;      // Number of pieces per player
-bool endGame = false;           // Set true to end game
-int turn = 0;                   // Turn counter, range 0 to numOfPlayers-1
-int consecTurns = 0;            // Counts num of consecutive turns
-string input;                   // Input for player names
 
 // Functions Implemented:
 class player;                                           // Player object
@@ -39,6 +35,7 @@ class player{
         playerTurn;
 
         // Check for valid player name
+        string input;
         do{
             cout << "Player " << playerTurn+1 << " choose a colour (Yellow, Blue, Red, Green): ";
             cin >> input;
@@ -95,6 +92,81 @@ class player{
 };
 
 player Players[numOfPlayers];           // Initialize array of Players
+
+// GAME
+int main(){
+    srand(time(NULL));
+    bool endGame = false;           // Set true to end game
+    int turn = 0;                   // Turn counter, range 0 to numOfPlayers-1
+    int consecTurns = 0;            // Counts num of consecutive turns
+
+    for(int i = 0; i < numOfPlayers; i++) Players[i] = player(i);       // Create players
+    printBoard();
+
+    do{
+        if(consecTurns >= 3){                               // Check number of consecutive turns
+            cout << Players[turn].name << " rolled 3 consecutive 6's";
+            if(Players[turn].numOfPiecesAtX(-1) <= numOfPieces){
+                cout << " and must return home\n";
+                for(int i = 0; i < numOfPieces; i++){
+                    if(Players[turn].piecePos[i] != -1){
+                        Players[turn].piecePos[i] = -1;
+                        printBoard();
+                    }
+                }
+            }
+            else cout << "but had no pieces outside of home. Next persons turn!\n";
+            turn = (++turn) % numOfPlayers;
+            consecTurns = 0;
+        }
+
+        cout << Players[turn].name << "'s turn ";
+        if(consecTurns > 0) cout << "again!\n";
+        else cout << "\n";
+
+        string input;
+        do{
+            cout << "Do you want to roll the die? (Y/N): ";
+            cin >> input;
+            if(!isYes(input)) cout << "Ok. Try that again?\n";
+        }while(!isYes(input));
+
+        int diceRoll;
+        diceRoll = rand() % 6 + 1;
+        for(int i = 0; i < 136; i++) cout << "=";
+        cout << "\n\t\t\t\t\t\t" << Players[turn].name << " rolled a " << diceRoll << "\n";
+
+        if(diceRoll == 5 && Players[turn].numOfPiecesAtX(-1) != 0){      // Moving piece onto BOARD
+            Players[turn].leaveHome();
+            if(Players[turn].piecePos[0] == Players[(turn+1)%2].piecePos[0]){
+                Players[(turn+1)%2].piecePos[0] = -1;
+                printBoard();
+                cout << Players[turn].name << " eats " << Players[(turn+1)%2].name << " and gets 20 extra moves!\n";
+                movePiece(turn, 20);
+            }
+        }
+        else movePiece(turn, diceRoll);
+
+        // Check for win
+        if(winConditionMet(turn)){
+            for(int i = 0; i < 136; i++) cout << "=";
+            cout << "\n\t\t\t\t\t" << Players[turn].name << " wins!\n";
+            cout << "\t\t\t\t      CONGRATULATIONS\n";
+            for(int i = 0; i < 136; i++) cout << "=";
+            cout << "\n";
+            endGame = true;
+        }
+
+        //Ending Turn
+        if(diceRoll != 6){
+            turn = (++turn) % numOfPlayers;
+            consecTurns = 0;
+        }
+        else consecTurns++;
+        if(!endGame) printBoard();
+    }while(!endGame);
+    return 0;
+}
 
 bool validName(string name, int turn){                  
     if(name != "Yellow" && name != "Blue" && name != "Red" && name != "Green") return false;
@@ -212,74 +284,4 @@ void printBoard(){
     cout << "\n";
     for(int i = 0; i < 136; i++) cout << "=";
     cout << "\n";
-}
-
-// GAME
-int main(){
-    srand(time(NULL));
-
-    for(int i = 0; i < numOfPlayers; i++) Players[i] = player(i);       // Create players
-    printBoard();
-
-    do{
-        if(consecTurns >= 3){                               // Check number of consecutive turns
-            cout << Players[turn].name << " rolled 3 consecutive 6's";
-            if(Players[turn].numOfPiecesAtX(-1) <= numOfPieces){
-                cout << " and must return home\n";
-                for(int i = 0; i < numOfPieces; i++){
-                    if(Players[turn].piecePos[i] != -1){
-                        Players[turn].piecePos[i] = -1;
-                        printBoard();
-                    }
-                }
-            }
-            else cout << "but had no pieces outside of home. Next persons turn!\n";
-            turn = (++turn) % numOfPlayers;
-            consecTurns = 0;
-        }
-
-        cout << Players[turn].name << "'s turn ";
-        if(consecTurns > 0) cout << "again!\n";
-        else cout << "\n";
-
-        do{
-            cout << "Do you want to roll the die? (Y/N): ";
-            cin >> input;
-            if(!isYes(input)) cout << "Ok. Try that again?\n";
-        }while(!isYes(input));
-
-        int diceRoll;
-        diceRoll = rand() % 6 + 1;
-        cout << "You rolled a " << diceRoll << "\n";
-
-        if(diceRoll == 5 && Players[turn].numOfPiecesAtX(-1) != 0){      // Moving piece onto BOARD
-            Players[turn].leaveHome();
-            if(Players[turn].piecePos[0] == Players[(turn+1)%2].piecePos[0]){
-                Players[(turn+1)%2].piecePos[0] = -1;
-                printBoard();
-                cout << Players[turn].name << " eats " << Players[(turn+1)%2].name << " and gets 20 extra moves!\n";
-                movePiece(turn, 20);
-            }
-        }
-        else movePiece(turn, diceRoll);
-
-        // Check for win
-        if(winConditionMet(turn)){
-            for(int i = 0; i < 136; i++) cout << "=";
-            cout << "\n\t\t\t\t\t" << Players[turn].name << " wins!\n";
-            cout << "\t\t\t\t      CONGRATULATIONS\n";
-            for(int i = 0; i < 136; i++) cout << "=";
-            cout << "\n";
-            endGame = true;
-        }
-
-        //Ending Turn
-        if(diceRoll != 6){
-            turn = (++turn) % numOfPlayers;
-            consecTurns = 0;
-        }
-        else consecTurns++;
-        if(!endGame) printBoard();
-    }while(!endGame);
-    return 0;
 }
