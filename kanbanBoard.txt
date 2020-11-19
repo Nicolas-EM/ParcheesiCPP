@@ -1,0 +1,9 @@
+Must Fix:
+    
+
+Fixed
+    printBoard() fails if 2 pieces are in same position
+
+To-Do:
+    Rework player class for least-privilige principle (make everything private)
+    Add pointer to nextPlayer and remove PLayers[4]
