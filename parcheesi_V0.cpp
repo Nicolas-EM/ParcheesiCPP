@@ -4,95 +4,143 @@
 */
 
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <cstdlib>
 #include <ctime>
-#include <limits>// Para pausa()
-#ifdef _WIN32 // Se define automáticamente en Visual Studio
+#include <limits>   // For pause
+#ifdef _WIN32 // Auto-defined in Visual Studio
 #include <windows.h>
-#undef max// Para poder usar max() en pausa()
+#undef max  // In order to use max() in pause()
 #endif
 using namespace std;
 
-const int numOfPlayers = 4;
-const int numOfPieces = 4;
-const int numOfTiles = 68;
-const bool Debug = false;
-const string file = "prueba5.txt";
+// Global variables and typedef
+const bool Debug = true;
+const string gameFile = "prueba5.txt";
+const int numOfPlayers = 4;     // Number of players
+const int numOfPieces = 4;      // Number of pieces per player
+const int numOfTiles = 68;      // Number of tiles on the board, excluding ending zone (tiles 100 to 108)
 class player;
 typedef enum{Yellow, Blue, Red, Green, Grey, None} colour;
 typedef player playerArray[numOfPlayers];
 typedef colour board[numOfTiles];
 
+// Functions
+void initColours();                                                                             // Initialize colours for WINDOWS
+void init(playerArray &players, board topBoard, board   bottomBoard, colour &playerTurn);       // Initialize boards to GREY colour
+void printBoard(const board &topBoard, const board &bottomBoard, const playerArray players);    // Prints BOARD
+void setPrintColour(const colour colour);                                                       // Set cout text colour to colour
+bool isSafe(const int position);                                                                // Returns true if position is safe
+bool isBridge(const board topBoard, const board bottomBoard, const int position);               // Returns true if a player has 2 pieces at position
+void pause();                                                                                   // Waits for user to press Enter
+string colourToString(const colour playerColour);                                               // Returns string descrpition of colour
+int playerHome(const colour player);                                                            // Returns position of player's home
+int piecesAtX(const int positionX, const playerArray players);                                  // Returns the number of pieces at position X
+void loadGame(playerArray &players, board &topBoard, board &bottomBoard, colour &playerTurn);                                         // Load game from txt
+
 class player{
     private:
-        int piecePos[numOfPieces];
-        colour playerColour;    // USED IN PLAYERHOME()
+        int piecePos[numOfPieces], lastMovedPiece, playerHome;
+        colour playerColour;
 
     public:
         player(){
             for(int i = 0; i < numOfPieces; i++) piecePos[i] = -1;
         }
 
-        void setPlayerColour(int n){    // USED IN PLAYERHOME() Set player colour
+        void setPosition(int index, int position){              // Sets piece at index to position (Used for loading game from txt)
+            piecePos[index] = position;
+        }
+        void setPlayerColour(int n){                            // Set player colour
             switch(n){
                 case 0:
                     playerColour = Yellow;
+                    playerHome = 5;
                     break;
                 case 1:
                     playerColour = Blue;
+                    playerHome = 22;
                     break;
                 case 2:
                     playerColour = Red;
+                    playerHome = 39;
                     break;
                 case 3:
                     playerColour = Green;
+                    playerHome = 56;
                     break;
                 default:
                     cerr << "Failed to assign player colour\n";
                     cerr << "Attempted to assign int " << n << "\n";
             }
         }
-        void leaveHome() const{         // Move piece out of HOME
-
+        void leaveHome(board &topBoard, board &bottomBoard){    // Move piece out of HOME
+            for(int i = 0; i < numOfPieces; i++){
+                if(piecePos[i] == -1){
+                    if(topBoard[playerHome] == playerColour){
+                        if(bottomBoard[playerHome] == playerColour){
+                            cout << "Your piece can not exit as it is blocked!\n";
+                            return;
+                        }
+                        else{
+                            bottomBoard[playerHome] = playerColour;
+                            piecePos[i] = playerHome;
+                            return;
+                        }
+                    }
+                    else{
+                        topBoard[playerHome] = playerColour;
+                        piecePos[i] = playerHome;
+                        return;
+                    }
+                }
+            }
         }
-        void moveBoardPiece(){          // Move piece on BOARD
+        void moveBoardPiece(){                                  // Move piece on BOARD
+            for(int piece = 0; piece < numOfTiles; piece++){
+                if(piecePos[piece] != 1){
 
+                }
+            }
         }
-        int getPiecesAtX(int position) const{ // Returns number of pieces in position X
+        void returnHome(board &topBoard, board &bottomBoard){   // Returns last moved piece to HOME if piece is NOT IN END ZONE
+            if(piecePos[lastMovedPiece] > 100) cout << "You rolled 3 consecutive 6's, you lose your turn!\n";
+            else{
+                cout << "The piece in position " << piecePos[lastMovedPiece] << " has been returned home!\n";
+                if(bottomBoard[lastMovedPiece] == playerColour) bottomBoard[lastMovedPiece] = Grey;
+                else{
+                    topBoard[lastMovedPiece] = Grey;
+                }
+                piecePos[lastMovedPiece] = -1;
+
+            }
+        }
+        int getPiecesAtX(int position) const{                   // Returns number of pieces in position X
             int piecesAtX = 0;
             for(int i = 0; i < numOfPieces; i++){
                 if(piecePos[i] == position) piecesAtX++;
             }
             return piecesAtX;
         }
-        // int getPlayerHome() const{
-        //     switch(playerColour){
-        //         case 0:
-        //             return 5;
-        //         case 1:
-        //             return 22;
-        //         case 2:
-        //             return 39;
-        //         case 3:
-        //             return 56;
-        //         default:
-        //             cerr << "Failed to return player Home\n";
-        //     }
-        //     return -1;
-        // }
-        int firstAtX(int position) const{     // Returns index of FIRST piece to arrive at position
+        int firstAtX(int position) const{                       // Returns index of FIRST piece to arrive at position
             for(int i = 0; i < numOfPieces; i++) if(piecePos[i] == position) return i;
             return -1;
         }
-        int secondAtX(int position) const{    // Returns index of SECOND piece to arrive at position
+        int secondAtX(int position) const{                      // Returns index of SECOND piece to arrive at position
             for(int i = firstAtX(position) + 1; i < numOfPieces; i++) if(piecePos[i] == position) return i;
             return -1;
         }
-        int getPiecePos(int index) const{
+        int getPiecePos(int index) const{                       // Returns piece position of index
             return piecePos[index];
         }
-        bool hasWon() const{                  // Returns true if player has won (All pieces in position 108)
+        bool allAtHome() const{                                 // Returns true if ALL pieces are at HOME
+            for(int i = 0; i < numOfPieces; i++){
+                if(piecePos[i] != -1) return false;
+            }
+            return true;
+        }
+        bool hasWon() const{                                    // Returns true if player has won (All pieces in position 108)
             for(int i = 0; i < numOfPieces; i++){
                 if(piecePos[i] != 108) return false;
             }
@@ -100,37 +148,40 @@ class player{
         }
 };
 
-void initColours();                                                                         // Initialize colours for WINDOWS
-void init(playerArray &players, board topBoard, board   bottomBoard, colour &playerTurn);   // Initialize boards to GREY colour
-void printBoard(const board &topBoard, const board &bottomBoard, const playerArray players);                           // Prints BOARD
-void setPrintColour(const colour colour);                                                         // Set cout text colour to colour
-bool isSafe(const int position);                                                                  // Returns true if position is safe
-bool isBridge(const board topBoard, const board bottomBoard, const int position);                             // Returns true if a player has 2 pieces at position
-void pause();                                                                               // Waits for user to press Enter
-string colourToString(const colour playerColour);
-int playerHome(const colour player);
-int piecesAtX(const int positionX, const playerArray players);
-
 int main(){
     // Var declaration
     playerArray players;
     board topBoard, bottomBoard;
     colour playerTurn;
-    int diceRoll;
+    int diceRoll, consecTurn = 0;
     initColours();      // Windows only
 
     // Board initialization
     init(players, topBoard, bottomBoard, playerTurn);
+    if(Debug) loadGame(players, topBoard, bottomBoard, playerTurn);
 
     // Game
-    // while(true){
+    while(true){
         printBoard(topBoard, bottomBoard, players);
         setPrintColour(playerTurn);
         cout << "It is " << colourToString(playerTurn) << "'s turn\n";
         pause();
         diceRoll = rand() % 6 + 1;
         cout << colourToString(playerTurn) << " rolled a " << diceRoll << "\n";
-    // }
+        if(diceRoll == 5) players[playerTurn].leaveHome(topBoard, bottomBoard);
+        else{
+            if(consecTurn == 2 && diceRoll == 6){
+                players[playerTurn].returnHome(topBoard, bottomBoard); //cout << "Return home!\n";
+                for(int i = 0; i < numOfPieces; i++) cout << players[playerTurn].getPiecePos(i) << "\n";
+            }
+            players[playerTurn].moveBoardPiece();
+        }
+        if(diceRoll == 6 && consecTurn != 2) consecTurn++;
+        else{
+            consecTurn = 0;
+            playerTurn = colour((int(playerTurn) + 1) % numOfPlayers);
+        }
+    }
 
     return 0;
 }
@@ -153,6 +204,11 @@ void init(playerArray &players, board topBoard, board bottomBoard, colour &playe
     srand(time(NULL));
     playerTurn = colour(rand() % numOfPlayers);
     for(int i = 0; i < numOfTiles; i++) topBoard[i] = bottomBoard[i] = None;
+    colour player = Yellow;
+    for(int i = 0; i < numOfPlayers; i++){
+        players[player].setPlayerColour(player);
+        player = colour((int(player) + 1) % numOfPlayers);
+    }
 }
 
 void printBoard(const board &topBoard, const board &bottomBoard, const playerArray players){
@@ -169,7 +225,7 @@ void printBoard(const board &topBoard, const board &bottomBoard, const playerArr
         setPrintColour(Grey);
         if(topBoard[i] != None){
             setPrintColour(topBoard[i]);
-            cout << players[topBoard[i]].secondAtX(i) + 1;
+            cout << players[topBoard[i]].firstAtX(i) + 1;
         }
         else cout << ' ';
     }
@@ -236,9 +292,6 @@ void printBoard(const board &topBoard, const board &bottomBoard, const playerArr
                     cout << i+1;
                 }
                 else cout << '^';
-                // if(colour(int(player) + 1) < 2) player = colour(int(player) + 1);
-                // cout << "Next player = " << colour(int(player) + 1);
-                // cout << "\tCurr player = " << int(player);
                 player = colour((int(player) + 1) % numOfPlayers);
                 setPrintColour(player);
             }
@@ -347,29 +400,29 @@ int piecesAtX(const int positionX, const playerArray players){
     return numOfPieces;
 }
 
-void pause() {
+void pause(){
    cout << "Press Enter to continue...";
    cin.ignore(numeric_limits<streamsize>::max(), '\n');
 }
 
-// void cargar(playerArray jugadores, tColor& jugadorTurno,
-//    tCasillas calle1, tCasillas calle2) {
-//    ifstream archivo;
-//    int jugador, casilla;
-//    archivo.open(Archivo);
-//    if (archivo.is_open()) {
-//       for (int i = 0; i < NUM_JUGADORES; i++)
-//          for (int f = 0; f < NUM_FICHAS; f++) {
-//             archivo >> casilla;
-//             jugadores[i][f] = casilla;
-//             if ((casilla >= 0) && (casilla < NUM_CASILLAS))
-//                if (calle1[casilla] == Ninguno)
-//                   calle1[casilla] = tColor(i);
-//                else
-//                   calle2[casilla] = tColor(i);
-//          }
-//       archivo >> jugador;
-//       jugadorTurno = tColor(jugador);
-//       archivo.close();
-//    }
-// }
+void loadGame(playerArray &players, board &topBoard, board &bottomBoard, colour &playerTurn){
+    ifstream inputFile;
+    int player, tile;
+    inputFile.open(gameFile);
+    if(inputFile){
+        for(int i = 0; i < numOfPlayers; i++){
+            for(int piece = 0; piece < numOfPieces; piece++){
+                inputFile >> tile;
+                players[i].setPosition(piece, tile);
+                if((tile >= 0) && (tile < numOfTiles)){
+                    if(topBoard[tile] == None) topBoard[tile] = colour(i);
+                    else bottomBoard[tile] = colour(i);
+                }
+            }
+        }
+        inputFile >> player;
+        playerTurn = colour(player);
+        inputFile.close();
+    }
+    else cerr << "Failed to open " << gameFile << "\n";
+}
